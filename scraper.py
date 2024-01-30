@@ -3,6 +3,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import NoSuchElementException
+from amazon import Amazon
 
 class ScrapeProductInfo:
     def __init__(self):
@@ -16,7 +17,8 @@ class ScrapeProductInfo:
         if 'flipkart' in url.lower():
             return self.flipkart(url)
         elif 'amazon' in url.lower():
-            return self.amazon(url)
+            amazon_instance = Amazon(self.driver)
+            return amazon_instance.scrape_info(url)
         elif 'meesho' in url.lower():
             return self.meesho(url)
         else:
@@ -39,6 +41,8 @@ class ScrapeProductInfo:
         driver.get(url)
         product_title = driver.find_element(By.CSS_SELECTOR, '#productTitle').text
 
+        product_category = driver.find_element(By.XPATH, "//a[contains(@class,'a-link-normal') and contains(@class,'a-color-tertiary')]").text
+        print(product_category)
         try:
             if "refurbished" in product_title.lower():
                 product_mrp = driver.find_element(By.CSS_SELECTOR, '#corePrice_desktop > div > table > tbody > tr:nth-child(1) > td.a-span12.a-color-secondary.a-size-base > span.a-price.a-text-price.a-size-base > span:nth-child(2)').text
@@ -48,7 +52,13 @@ class ScrapeProductInfo:
             product_mrp = driver.find_element(By.CSS_SELECTOR, '#corePriceDisplay_desktop_feature_div > div.a-section.a-spacing-none.aok-align-center.aok-relative > span.a-price.aok-align-center.reinventPricePriceToPayMargin.priceToPay > span:nth-child(2) > span.a-price-whole').text
 
         product_mrp = re.sub(r'\D', '', product_mrp)
-        return product_title, product_mrp
+
+        # try:
+        #     product_category = driver.find_element(By.XPATH, "//a[contains(@class,'a-link-normal') and contains(@class,'a-color-tertiary')]").text
+        # except NoSuchElementException:
+        #     product_category = "Category not found"
+
+        return product_title, product_mrp, product_category
 
     def meesho(self, url):
         driver = self.driver
@@ -63,5 +73,5 @@ class ScrapeProductInfo:
         product_mrp = re.sub(r'\D', '', product_mrp)
         return product_title, product_mrp
 
-    def __del__(self):
+    def _del_(self):
         self.driver.quit()
